@@ -18,17 +18,23 @@ class MultiActionTest extends TestCase
 {
     public function test_action_executes_multiples()
     {
-        $adventure = new Adventure();
+        $adventure = new Adventure(
+            'Test',
+            'Testing',
+            'test',
+            'test'
+        );
 
         $location = new Setting(
             $adventure,
             'Location',
-            'Description'
+            'Description',
+            'location'
         );
 
         $simple_action = new SimpleResponseAction(
-            'Simple',
             $adventure,
+            'Simple',
             'Simple Response'
         );
 
@@ -59,15 +65,20 @@ class MultiActionTest extends TestCase
 
     public function test_multiaction_returns_new_location()
     {
-        $adventure = new Adventure();
+        $adventure = new Adventure(
+            'Test',
+            'Testing',
+            'test',
+            'test'
+        );
 
-        $current = new Setting($adventure, 'Now', 'Now');
-        $next = new Setting($adventure, 'Next', 'Next');
+        $current = new Setting($adventure, 'Now', 'Now', 'now');
+        $next = new Setting($adventure, 'Next', 'Next', 'next');
 
         $multi = new MultiAction($adventure, 'Multi', new Actions(
-            new SimpleResponseAction('1', $adventure, '1'),
-            new LeaveAction('Leave', $adventure, $next),
-            new SimpleResponseAction('2', $adventure, '2')
+            new SimpleResponseAction($adventure, '1', '1'),
+            new LeaveAction($adventure, 'Leave', $next),
+            new SimpleResponseAction($adventure, '2', '2')
         ));
 
         $changed = $multi->doAction($current, new Messages());

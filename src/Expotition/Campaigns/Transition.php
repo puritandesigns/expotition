@@ -11,19 +11,19 @@ final class Transition
     /** @var Messages */
     private $messages;
     /** @var SettingInterface */
-    private $location;
+    private $setting;
 
     public function __construct(
         Messages $messages,
-        SettingInterface $location
+        SettingInterface $setting
     ) {
         $this->messages = $messages;
-        $this->location = $location;
+        $this->setting = $setting;
     }
 
-    public function getLocation(): SettingInterface
+    public function getSetting(): SettingInterface
     {
-        return $this->location;
+        return $this->setting;
     }
 
     public function getMessages(): Messages
@@ -33,6 +33,6 @@ final class Transition
 
     public function getActions(): Actions
     {
-        return $this->location->getActions();
+        return $this->setting->getActions();
     }
 }

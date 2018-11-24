@@ -6,19 +6,23 @@ use Expotition\Campaigns\AdventureInterface;
 use Expotition\Messages\Messages;
 use Expotition\Settings\SettingInterface;
 
-class AddEventAction extends AbstractAction
+final class AddEventAction extends AbstractAction
 {
     /** @var string */
     private $event;
+    /** @var string */
+    private $response;
 
     public function __construct(
         AdventureInterface $adventure,
         string $event,
-        string $description = ''
+        string $description = '',
+        string $response = null
     ) {
-        parent::__construct($description, $adventure);
+        parent::__construct($adventure, $description);
 
         $this->event = $event;
+        $this->response = $response;
     }
 
     public function doAction(
@@ -27,8 +31,8 @@ class AddEventAction extends AbstractAction
     ): SettingInterface {
         $this->getAdventure()->addEvent($this->event);
 
-        if ('' !== $this->getDescription()) {
-            $messages->createAndAdd($this->getDescription());
+        if (null !== $this->response) {
+            $messages->createAndAdd($this->response);
         }
 
         return $current_setting;

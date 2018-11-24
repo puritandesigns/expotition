@@ -11,6 +11,8 @@ use Expotition\Messages\Messages;
 class Setting implements SettingInterface
 {
     /** @var string */
+    private $slug;
+    /** @var string */
     private $title;
     /** @var string */
     private $description;
@@ -23,12 +25,19 @@ class Setting implements SettingInterface
         AdventureInterface $adventure,
         string $title,
         string $description,
+        string $slug,
         Actions $actions = null
     ) {
         $this->adventure = $adventure;
+        $this->slug = $slug;
         $this->title = $title;
         $this->description = $description;
         $this->actions = $actions;
+    }
+
+    public function getSlug(): string
+    {
+        return $this->slug;
     }
 
     public function getTitle(): string

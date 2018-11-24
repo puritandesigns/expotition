@@ -2,7 +2,9 @@
 
 namespace Expotition\Campaigns;
 
-class QuestException extends \Exception
-{
+use Expotition\Messages\Messages;
 
+abstract class QuestException extends \Exception
+{
+    abstract public function getMessages(): Messages;
 }

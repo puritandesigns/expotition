@@ -9,6 +9,8 @@ use Expotition\Messages\Messages;
 
 interface SettingInterface
 {
+    public function getSlug(): string;
+
     public function getTitle(): string;
 
     public function getDescription(): string;

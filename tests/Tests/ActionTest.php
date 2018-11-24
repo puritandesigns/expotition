@@ -15,7 +15,12 @@ class ActionTest extends TestCase
 {
     public function test_negative_condtional_action()
     {
-        $adventure = new Adventure();
+        $adventure = new Adventure(
+            'Test',
+            'Testing',
+            'test',
+            'test'
+        );
 
         $action = new ConditionalAction(
             $adventure,
@@ -25,7 +30,7 @@ class ActionTest extends TestCase
                     return $adventure->hasEventOccurred('nonexistent');
                 }
             },
-            new SimpleResponseAction('Test', $adventure, '')
+            new SimpleResponseAction($adventure, 'Test', '')
         );
 
         $this->assertFalse($action->evaluateCondition());
@@ -41,14 +46,19 @@ class ActionTest extends TestCase
             }
         };
 
-        $adventure = new Adventure();
+        $adventure = new Adventure(
+            'Test',
+            'Testing',
+            'test',
+            'test'
+        );
 
         $action = new \Expotition\Actions\ConditionalAction(
             $adventure,
             $canDoCheck,
             new \Expotition\Actions\SimpleResponseAction(
-                'Talk to the Old Man',
                 $adventure,
+                'Talk to the Old Man',
                 'The Old Man holds the sword aloft and says, "It is dangerous to go alone! Take this."'
             )
         );

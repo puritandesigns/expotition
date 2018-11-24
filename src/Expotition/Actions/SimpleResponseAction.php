@@ -12,11 +12,11 @@ final class SimpleResponseAction extends AbstractAction
     private $response;
 
     public function __construct(
-        string $description,
         AdventureInterface $adventure,
+        string $description,
         string $response
     ) {
-        parent::__construct($description, $adventure);
+        parent::__construct($adventure, $description);
 
         $this->response = $response;
     }

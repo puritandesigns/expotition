@@ -7,12 +7,29 @@ use Expotition\Settings\SettingInterface;
 
 final class Adventure implements AdventureInterface
 {
+    /** @var string */
+    private $title;
+    /** @var string */
+    private $slug;
+    /** @var string */
+    private $description;
+    /** @var string */
+    private $first_setting;
     /** @var Events */
     private $events;
 
     public function __construct(
+        string $title,
+        string $description,
+        string $slug,
+        string $first_setting,
         Events $events = null
     ) {
+        $this->description = $description;
+        $this->first_setting = $first_setting;
+        $this->slug = $slug;
+        $this->title = $title;
+
         if (null === $events) {
             $events = new Events();
         }
@@ -46,5 +63,25 @@ final class Adventure implements AdventureInterface
     public function hasEventOccurred(string $event): bool
     {
         return $this->events->hasEventOccurred($event);
+    }
+
+    public function getDescription(): string
+    {
+        return $this->description;
+    }
+
+    public function getSlug(): string
+    {
+        return $this->slug;
+    }
+
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    public function getFirstSetting()
+    {
+        return $this->first_setting;
     }
 }

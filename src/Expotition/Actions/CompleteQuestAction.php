@@ -18,12 +18,12 @@ final class CompleteQuestAction extends AbstractAction
     private $completion_type;
 
     public function __construct(
-        string $description,
         AdventureInterface $adventure,
+        string $description,
         int $completion_type,
         string $explanation = null
     ) {
-        parent::__construct($description, $adventure);
+        parent::__construct($adventure, $description);
 
         $this->completion_type = $completion_type;
 

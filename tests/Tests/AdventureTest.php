@@ -16,16 +16,22 @@ class AdventureTest extends \PHPUnit\Framework\TestCase
     /** @expectedException \Expotition\Campaigns\QuestSuccessException */
     public function test_adventure_completes()
     {
-        $adventure = new Adventure();
+        $adventure = new Adventure(
+            'Test',
+            'Testing',
+            'test',
+            'test'
+        );
 
         $forest = new Setting(
             $adventure,
             'Forest',
             'The sunlight blinds you as you step out of the cave. When your eyes adjust you see a lightly wooded forest.',
+            'forest',
             new Actions(
                 new CompleteQuestAction(
-                    'Walk off into the sunset',
                     $adventure,
+                    'Walk off into the sunset',
                     1
                 )
             )
@@ -35,27 +41,28 @@ class AdventureTest extends \PHPUnit\Framework\TestCase
             $adventure,
             'Dark Cave',
             'You wake up in a Dark Cave with two torches towards the middle.',
+            'dark-cave',
             new Actions(
                 new SimpleResponseAction(
-                    'Talk to the Old Man',
                     $adventure,
+                    'Talk to the Old Man',
                     'The Old Man holds the sword aloft and says, "It is dangerous to alone! Take this."'
                 ),
                 new SimpleResponseAction(
-                    'Take the sword',
                     $adventure,
+                    'Take the sword',
                     'You grip the hilt of the sword and hold it above your head. Da da da da!'
                 ),
                 new LeaveAction(
-                    'Exit the cave',
                     $adventure,
+                    'Exit the cave',
                     $forest
                 )
             )
         );
 
         $snapshot = $adventure->doAction($dark_cave, 2);
-        $location = $snapshot->getLocation();
+        $location = $snapshot->getSetting();
         $location->doAction(0, new Messages());
     }
 }

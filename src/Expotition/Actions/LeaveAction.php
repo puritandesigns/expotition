@@ -14,12 +14,12 @@ final class LeaveAction extends AbstractAction
     private $transition_message;
 
     public function __construct(
-        string $description,
         AdventureInterface $adventure,
+        string $description,
         SettingInterface $location_to_enter,
         string $transition_message = null
     ) {
-        parent::__construct($description, $adventure);
+        parent::__construct($adventure, $description);
 
         $this->location_to_enter = $location_to_enter;
         $this->transition_message = $transition_message;

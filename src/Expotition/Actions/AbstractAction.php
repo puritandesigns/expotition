@@ -12,8 +12,8 @@ abstract class AbstractAction implements ActionInterface
     private $adventure;
 
     public function __construct(
-        string $description,
-        AdventureInterface $adventure
+        AdventureInterface $adventure,
+        string $description
     ) {
         $this->description = $description;
         $this->adventure = $adventure;
