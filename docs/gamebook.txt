@@ -1,0 +1,654 @@
+# Building a Gamebook Web Thingy
+## TrianglePHP Slack: michaelkelly
+
+---
+
+# Give this short one a try
+
+## adventures.landoftalinas.com
+
+*Can you figure out the video game homage?* 
+
+---
+
+# What are the elements of a Gamebook?
+
+---
+
+# Elements of a Gamebook
+
+1. Location text
+2. Choices
+3. Consequences/Transition text
+4. State
+
+---
+
+# Adventure
+
+...
+
+---
+
+# Location
+
+    The trading post is a small village, set up here by enterprising settlers from the mainland. Its main export is fir trees from the forest. There is not much in the town; only the settlers' houses, a small market, a wharf, and a shrine to Lacuna the Huntress, goddess of nature.
+
+*Excerpts from Fabled Lands: War-Torn Kingdom*
+
+---
+
+# Choices
+
+- Visit the shrine to Lacuna              turn to 544
+- Visit the market                        turn to 452
+- Visit the wharf                         turn to 332
+- Climb the hill that overlooks the town  turn to 11
+- Go inland into the forest               turn to 257
+
+---
+
+# Consequences<br>Transitions
+
+## Transition
+    A narrow path leads up the hill, the top of which is crowned with a circle of large obsidian standing stones, hewn from solid rock. Turn to 65.
+
+## Consequence
+    The whirlwind guardian catches you and slams you against the stone walls until you are dead. Your adventures are over....
+
+---
+
+# State
+
+    Put a checkmark in an empty box. If all the boxes are checked, turn to 236. Otherwise...
+
+---
+
+# Converting the Elements to Objects
+
+1. Book => AdventureInterface
+2. Location text => SettingInterface
+3. Choice => ActionInterface (The crux!)
+4. Transition => Transition::class
+5. Consequence => Throw Exception
+6. State => Events::class
+
+---
+
+# The Example
+
+**Location**: You are in a Dark Cave with two torches towards the middle. Between the two torches is an Old Man. He holds a sword in his hands with the hilt towards you.
+
+**Choice**: Take the Sword
+
+---
+
+# The Example
+
+**State**: Store event "sword-taken"
+
+**Transition**: You grip the hilt of the sword and hold it above your head. Da da da da! The Old Man disappears and you are left alone in the cave.
+
+---
+
+# AdventureInterface
+
+```php
+interface AdventureInterface
+{
+    public function doAction(
+        SettingInterface $setting,
+        int $action_id
+    ): Transition;
+
+    public function addEvent(string $event);
+
+    public function getEvents(): Events;
+
+    public function hasEventOccurred(string $event): bool;
+}
+
+```
+
+---
+
+# Adventure::doAction
+
+```php
+public function doAction(
+    SettingInterface $setting,
+    int $action_id = null
+): Transition {
+    $messages = new Messages();
+
+    if (null !== $action_id) {
+        return $setting->doAction($action_id, $messages);
+    }
+
+    return new Transition($messages, $setting);
+}
+```
+
+---
+
+# SettingInterface
+
+```php
+interface SettingInterface
+{
+    public function doAction(
+        $index, $messages
+    ): Transition;
+
+    public function getActions(): Actions;
+
+    public function getActionByInt(
+        int $index
+    ): ActionInterface;
+    // Plus getTitle & getDescription
+}
+```
+
+---
+
+# Setting::doAction
+
+```php
+public function doAction(
+    $index,
+    Messages $messages
+): Transition {
+    $action = $this->getActionByInt($index);
+
+    $setting = $action->doAction($this, $messages);
+
+    return new Transition($messages, $setting);
+}
+```
+
+---
+
+# ActionInterface
+## Actions are where it's at!
+
+```php
+interface ActionInterface
+{
+    public function getDescription(): string;
+
+    public function doAction(
+        SettingInterface $current_setting,
+        Messages $messages
+    ): SettingInterface;
+
+    public function isDoable(): bool;
+}
+
+```
+
+---
+
+# SimpleResponseAction
+
+```php
+final class SimpleResponseAction extends AbstractAction
+{
+    /** @var string */
+    private $response;
+
+    public function __construct(
+        string $description,
+        AdventureInterface $adventure,
+        string $response
+    ) {
+        parent::__construct($description, $adventure);
+
+        $this->response = $response;
+    }
+
+    public function doAction(
+        SettingInterface $current_setting,
+        Messages $messages
+    ): SettingInterface {
+        $messages->createAndAdd($this->response);
+
+        return $current_setting;
+    }
+}
+```
+
+---
+
+# LeaveAction
+
+```php
+final class LeaveAction extends AbstractAction
+{
+    /** @var SettingInterface */
+    private $location_to_enter;
+    /** @var string */
+    private $transition_message;
+
+    public function __construct(
+        string $description,
+        AdventureInterface $adventure,
+        SettingInterface $location_to_enter,
+        string $transition_message = null
+    ) {
+        parent::__construct($description, $adventure);
+
+        $this->location_to_enter = $location_to_enter;
+        $this->transition_message = $transition_message;
+    }
+
+    public function doAction(
+        SettingInterface $current_setting,
+        Messages $messages
+    ): SettingInterface {
+        if (null !== $this->transition_message) {
+            $messages->createAndAdd(
+                $this->transition_message
+            );
+        }
+
+        return $this->location_to_enter;
+    }
+}
+```
+
+---
+
+# BinaryAction
+
+```php
+final class BinaryAction implements ActionInterface,
+    ConditionalInterface
+{
+    /** @var AdventureInterface */
+    private $adventure;
+    /** @var ConditionalCheckInterface */
+    private $condition;
+    /** @var ActionInterface */
+    private $success_action;
+    /** @var ActionInterface */
+    private $failure_action;
+
+    public function __construct(
+        AdventureInterface $adventure,
+        ConditionalCheckInterface $condition,
+        ActionInterface $success_action,
+        ActionInterface $failure_action
+    ) {
+        $this->adventure = $adventure;
+        $this->condition = $condition;
+        $this->success_action = $success_action;
+        $this->failure_action = $failure_action;
+    }
+
+    private function getConditionalAction(
+    ): ActionInterface {
+        if ($this->evaluateCondition()) {
+            return $this->success_action;
+        }
+
+        return $this->failure_action;
+    }
+
+    public function doAction(
+        SettingInterface $current_setting,
+        Messages $messages
+    ): SettingInterface {
+        return $this->getConditionalAction()
+            ->doAction(
+                $current_setting,
+                $messages
+            );
+    }
+
+    public function evaluateCondition(): bool
+    {
+        return $this->condition->check(
+            $this->getAdventure()
+        );
+    }
+
+    public function getDescription(): string
+    {
+        return $this->getConditionalAction()
+            ->getDescription();
+    }
+    
+    public function isDoable(): bool
+    {
+        return true; // Contrast this with the next one...
+    }
+}
+```
+
+---
+
+# ConditionalAction
+
+```php
+final class ConditionalAction implements ActionInterface,
+    ConditionalInterface
+{
+    /** @var ConditionalCheckInterface */
+    private $condition;
+    /** @var ActionInterface */
+    private $action;
+    /** @var AdventureInterface */
+    private $adventure;
+
+    public function __construct(
+        AdventureInterface $adventure,
+        $condition,
+        ActionInterface $action
+    ) {
+        $this->condition = $condition;
+        $this->action = $action;
+        $this->adventure = $adventure;
+    }
+
+    public function getDescription(): string
+    {
+        return $this->action->getDescription();
+    }
+
+    public function getAdventure(): AdventureInterface
+    {
+        return $this->adventure;
+    }
+
+    public function doAction(
+        SettingInterface $current_setting,
+        Messages $messages
+    ): SettingInterface
+    {
+        if ($this->evaluateCondition()) {
+            return $this->action->doAction(
+                $current_setting,
+                $messages
+            );
+        }
+
+        return $current_setting;
+    }
+
+    public function isDoable(): bool
+    {
+        return $this->evaluateCondition();
+    }
+
+    public function evaluateCondition(): bool
+    {
+        return $this->condition->check(
+            $this->adventure
+        );
+    }
+}
+```
+
+---
+
+# ConditionalCheckInterface
+
+```php
+$hasSwordCheck = new class implements
+    \Expotition\Actions\ConditionalCheckInterface
+{
+    public function check(
+        AdventureInterface $adventure
+    ): bool {
+        return $adventure->hasEventOccured('sword-taken');
+    }
+};
+```
+
+---
+
+# MultiAction
+
+```php
+final class MultiAction implements ActionInterface
+{
+    /** @var string */
+    private $description;
+    /** @var AdventureInterface */
+    private $adventure;
+    /** @var Actions */
+    private $actions;
+
+    public function __construct(
+        AdventureInterface $adventure,
+        string $description,
+        Actions $actions
+    ) {
+        $this->adventure = $adventure;
+        $this->description = $description;
+        $this->actions = $actions;
+    }
+
+    ...
+
+    public function doAction(
+        SettingInterface $setting,
+        Messages $messages
+    ): SettingInterface {
+        /** @var ActionInterface $action */
+        foreach ($this->actions as $action) {
+            $setting = $action->doAction(
+                $setting,
+                $messages
+            );
+        }
+
+        return $setting;
+    }
+}
+```
+
+---
+
+# AddEventAction
+
+```php
+final class AddEventAction extends AbstractAction
+{
+    /** @var string */
+    private $event;
+
+    public function __construct(
+        AdventureInterface $adventure,
+        string $event,
+        string $description = ''
+    ) {
+        parent::__construct($description, $adventure);
+
+        $this->event = $event;
+    }
+
+    public function doAction(
+        SettingInterface $current_setting,
+        Messages $messages
+    ): SettingInterface {
+        $this->getAdventure()
+            ->addEvent($this->event);
+
+        if ('' !== $this->getDescription()) {
+            $messages->createAndAdd(
+                $this->getDescription()
+            );
+        }
+
+        return $current_setting;
+    }
+}
+```
+
+---
+
+# CompleteQuestAction
+
+```php
+final class CompleteQuestAction extends AbstractAction
+{
+    public const SUCCESS = 1;
+    public const FAILURE = 0;
+    /** @var string */
+    private $explanation;
+    /** @var int */
+    private $completion_type;
+
+    public function __construct(
+        AdventureInterface $adventure,
+        string $description,
+        int $completion_type,
+        string $explanation = null
+    ) {
+        parent::__construct($description, $adventure);
+
+        $this->completion_type = $completion_type;
+
+        if (null === $explanation) {
+            $explanation = 'Whoops!';
+            if (1 === $completion_type) {
+                $explanation = 'Congratulations!';
+            }
+        }
+
+        $this->explanation = $explanation;
+    }
+
+    public function doAction(
+        SettingInterface $current_setting,
+        Messages $messages
+    ): SettingInterface {
+        if ($this->completion_type) {
+            throw new QuestSuccessException(
+                $this->explanation
+            );
+        }
+
+        throw new QuestFailException(
+            $this->explanation
+        );
+    }
+}
+
+```
+
+---
+
+# Transition
+
+```php
+final class Transition
+{
+    /** @var Messages */
+    private $messages;
+    /** @var SettingInterface */
+    private $location;
+
+    public function __construct(
+        Messages $messages,
+        SettingInterface $location
+    ) {
+        $this->messages = $messages;
+        $this->location = $location;
+    }
+
+    public function getLocation(): SettingInterface
+    {
+        return $this->location;
+    }
+
+    public function getMessages(): Messages
+    {
+        return $this->messages;
+    }
+}
+```
+
+---
+
+# Putting It All Together
+## The Web Side of Things
+
+1. No Database!?!?
+0. Instantiates all objects on every request!?!?
+0. No Dependency injection container!?!?
+0. Views are made via `echo`-ing!?!?
+
+**Brace yourself. It's about to get ugly.**
+
+---
+
+```php
+try {
+    $snapshot = $adventure->doAction(
+        $location,
+        $action_id
+    );
+    $messages = $snapshot->getMessages();
+    $location = $snapshot->getLocation();
+    $actions = $snapshot->getActions();
+} catch (QuestException $end) {
+    $_SESSION = [];
+    echo '<p><strong>' . $end->getMessage() .
+        '</strong></p>';
+    echo '<p><a href="/">Play again?</a></p>';
+    exit;
+} catch (InvalidActionException $exception) {
+    $messages = new Messages();
+    $messages->createAndAdd(
+        'You cannot take that action at this time.',
+        Message::ERROR
+    );
+}
+```
+
+---
+
+```php
+if ($messages->count()) {
+    echo '<ul class="messages">';
+    /** @var Message $message */
+    foreach ($messages as $message) {
+        echo '<li class="' .
+                $message->getType() . '">';
+            echo $message->getMessage() . '</li>';
+    }
+    echo '</ul>';
+}
+
+echo "<p>{$location->getDescription()}</p>";
+
+/** @var ActionInterface $action */
+foreach ($actions as $index => $action) {
+    if ($action->isDoable()) {
+        echo "<form method='post'>
+            <p>
+            <input type='hidden'
+                name='action'
+                value='{$index}'>
+                <button type='submit'>
+                    {$action->getDescription()}
+                </button>
+            </p>
+        </form>";
+    }
+}
+
+foreach ($locations as $index => $loc) {
+    if ($location->getTitle() === $loc->getTitle()) {
+        $_SESSION['current_location'] = $index;
+        break;
+    }
+}
+```
+
+---
+
+# Thanks
+## Questions? Critiques?

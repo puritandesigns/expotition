@@ -1,0 +1,20 @@
+div.reveal h1 { font-size: 2.25em; text-transform: initial; }
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+    text-transform: initial !important;
+}
+
+#give-this-short-one-a-try h1 {
+    font-size: 2.15em;
+}
+#give-this-short-one-a-try h2 {
+    font-size: 1.75em;
+}
+
+#conditionalcheckinterface h1 {
+    font-size: 1.85em;
+}
