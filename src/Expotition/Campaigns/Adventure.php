@@ -80,7 +80,7 @@ final class Adventure implements AdventureInterface
         return $this->title;
     }
 
-    public function getFirstSetting()
+    public function getFirstSetting(): string
     {
         return $this->first_setting;
     }
