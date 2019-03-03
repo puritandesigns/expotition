@@ -2,6 +2,8 @@
 
 PHP classes to build a Gamebook story.
 
+[View a slideshow from a TrianglePHP Meetup](http://puritandesigns.com/expotition/) 
+
 ## Getting Started
 
 1. Run `composer require puritandesigns/expotition`
