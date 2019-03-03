@@ -9,7 +9,7 @@ final class QuestSuccessException extends QuestException
 {
     public function getMessages() : Messages{
         return new Messages(
-            new Message($this->getMessage(), Message::SUCCESS);
-        )
+            new Message($this->getMessage(), Message::SUCCESS)
+        );
     }
 }
